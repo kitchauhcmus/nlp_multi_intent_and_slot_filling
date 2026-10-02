@@ -1,4 +1,4 @@
-# NLP Mini Contest 2026 - Joint Intent and Slot Filling
+# NLP - Joint Intent and Slot Filling
 
 Repository này chứa mã nguồn giải quyết bài toán đa nhiệm: Phân loại Ý định đa nhãn (Multi-label Intent) và Trích xuất Thực thể (Slot Filling) cho trợ lý ảo Tiếng Việt.
 
