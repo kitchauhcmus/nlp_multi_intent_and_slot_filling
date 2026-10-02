@@ -2,10 +2,21 @@
 
 Repository này chứa mã nguồn giải quyết bài toán đa nhiệm: Phân loại Ý định đa nhãn (Multi-label Intent) và Trích xuất Thực thể (Slot Filling) cho hệ thống trợ lý ảo tiếng Việt.
 
-## Mô tả Bài toán
-Hệ thống trợ lý ảo cần hiểu được câu lệnh tiếng Việt của người dùng (ví dụ: "gọi tôi dậy lúc chín giờ sáng ngày thứ sáu") thông qua hai nhiệm vụ thực thi song song:
-1. **Intent (Ý định):** Xác định mục tiêu của người dùng muốn trợ lý làm gì; khoảng 13% số câu ghép hai yêu cầu bằng các từ nối như "và", "rồi", "sau đó", "với lại", "xong thì", "nhân tiện". Trong bài nộp, các ý định đa nhãn được phân tách bằng dấu `#` (ví dụ: `alarm_set#weather_query`).
-2. **Slot (Thực thể):** Trích xuất các cụm từ mang giá trị tham số của yêu cầu (như thời gian, địa điểm, thiết bị...). Mỗi token (âm tiết) trong câu sẽ được gán một nhãn duy nhất theo tiêu chuẩn BIO (Begin - Inside - Outside). Ví dụ cụm "chín giờ sáng" được gán chuỗi `B-time I-time I-time`.
+## Tổng quan
+
+Một trợ lý ảo nhận **câu lệnh tiếng Việt** của người dùng, ví dụ "gọi tôi dậy lúc chín giờ sáng ngày thứ sáu", và phải hiểu hai điều cùng lúc:
+
+1. **Ý định (intent)**: người dùng muốn trợ lý làm gì. Một câu có thể chứa **một hoặc nhiều** ý định; khoảng 13 % số câu ghép hai yêu cầu bằng các từ nối như "và", "rồi", "sau đó", "với lại", "xong thì", "nhân tiện".
+2. **Thông tin cần điền (slot)**: các cụm từ mang giá trị tham số của yêu cầu, như thời gian, địa điểm, tên người hay tên bài hát. Mỗi token của câu được gán một nhãn theo sơ đồ **BIO**.
+
+Dữ liệu của bài gồm:
+
+* 14.191 câu train và 1.275 câu dev có đủ nhãn intent và slot.
+* 2.727 câu test chỉ có văn bản; nhãn của tập test được ẩn.
+* 60 intent thuộc 18 nhóm chức năng (báo thức, lịch, thời tiết, nhạc, email, nhà thông minh, tin tức, giao thông...) và 54 loại slot.
+* Văn bản đã được chuyển về chữ thường. Mỗi token là một **âm tiết** và các token cách nhau đúng một dấu cách.
+
+Với mỗi câu test, thí sinh nộp tập intent và chuỗi nhãn BIO của câu đó. Điểm của bài nộp là trung bình cộng của điểm intent và điểm slot, nên hai phần quan trọng ngang nhau.
 
 ## Nhiệm vụ
 
