@@ -1,13 +1,13 @@
-# 🚀 NLP - Multi-label Intent and Slot Filling
+# NLP - Multi-label Intent and Slot Filling
 
 Repository này chứa mã nguồn giải quyết bài toán đa nhiệm: Phân loại Ý định đa nhãn (Multi-label Intent) và Trích xuất Thực thể (Slot Filling) cho hệ thống trợ lý ảo tiếng Việt.
 
-## 🎯 Mô tả Bài toán (Problem Statement)
+## Mô tả Bài toán (Problem Statement)
 Hệ thống trợ lý ảo cần hiểu được câu lệnh tiếng Việt của người dùng (ví dụ: "gọi tôi dậy lúc chín giờ sáng ngày thứ sáu") thông qua hai nhiệm vụ thực thi song song[cite: 11]:
 1. **Intent (Ý định):** Xác định mục tiêu của người dùng muốn trợ lý làm gì. Một câu có thể chứa một hoặc nhiều ý định cùng lúc (chiếm khoảng 13% dữ liệu)[cite: 11]. Trong bài nộp, các ý định đa nhãn được phân tách bằng dấu `#` (ví dụ: `alarm_set#weather_query`)[cite: 15].
 2. **Slot (Thực thể):** Trích xuất các cụm từ mang giá trị tham số của yêu cầu (như thời gian, địa điểm, thiết bị...)[cite: 11]. Mỗi token (âm tiết) trong câu sẽ được gán một nhãn duy nhất theo tiêu chuẩn BIO (Begin - Inside - Outside)[cite: 11, 15]. Ví dụ cụm "chín giờ sáng" được gán chuỗi `B-time I-time I-time`[cite: 15].
 
-## 💡 Phương pháp Thực hiện (Methodology)
+## Phương pháp Thực hiện (Methodology)
 Hệ thống chấm điểm đánh giá hiệu suất thông qua trung bình cộng của `Macro-F1 Intent` và `Micro-F1 Slot`[cite: 14]. Nhằm tối ưu hóa đồng thời cả hai bài toán, dự án áp dụng chiến lược **Ensemble Prediction** bằng cách chắt lọc điểm mạnh từ 2 mô hình khác biệt[cite: 25, 29]:
 
 * **1. Mô hình Baseline (Tối ưu hóa Intent):**
@@ -22,13 +22,13 @@ Hệ thống chấm điểm đánh giá hiệu suất thông qua trung bình c�
   * Tiến hành hợp nhất (merge) kết quả tốt nhất của cả 2 phương pháp: Cột `intent` lấy từ mô hình Baseline ghép với cột `slots` lấy từ mô hình XLM-R[cite: 29].
   * Đạt mức điểm chung cuộc 0.75 F1 mà không phát sinh thêm chi phí tính toán GPU ở bước cuối[cite: 29].
 
-## 📊 Đặc tả Dữ liệu (Dataset)
+## Đặc tả Dữ liệu (Dataset)
 Tập dữ liệu xây dựng từ nguồn MASSIVE 1.1 (Amazon) đã được chuẩn hóa riêng cho ngữ liệu tiếng Việt (vi-VN)[cite: 14].
 * **Train / Dev set:** Gồm 14.191 câu huấn luyện và 1.275 câu đánh giá có đủ nhãn[cite: 11, 14].
 * **Test set:** Gồm 2.727 câu ẩn nhãn dùng để dự đoán[cite: 11, 14].
 * **Không gian nhãn:** Tổng cộng 60 ý định (Intent) và 54 loại thực thể (Slot)[cite: 11, 14].
 
-## 🧠 Cấu trúc Thư mục (Project Structure)
+## Cấu trúc Thư mục (Project Structure)
 ```text
 ├── data/
 │   ├── train.csv, dev.csv, test.csv
