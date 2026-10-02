@@ -43,31 +43,7 @@ Với câu ghép hai yêu cầu, từ nối mang nhãn `0` và các cụm slot c
 ```text
 text : cài báo thức trong hai giờ kể từ bây giờ và thời tiết hôm nay thế nào
 slots: 0 0 0 0 B-time I-time I-time I-time I-time I-time 0 0 0 B-date I-date 0 0
-```
+python3 scorer.py du_doan_dev.csv --gt dev.csv           # in Score, IntentF1, SlotF1
+python3 scorer.py du_doan_dev.csv --gt dev.csv --per-class # in thêm F1 của từng intent
 
-## Phương pháp thực hiện 
-Hệ thống chấm điểm đánh giá hiệu suất thông qua trung bình cộng của `Macro-F1 Intent` và `Micro-F1 Slot`. Nhằm tối ưu hóa đồng thời cả hai bài toán, dự án áp dụng chiến lược **Ensemble Prediction** bằng cách chắt lọc điểm mạnh từ 2 mô hình khác biệt:
 
-* **1. Mô hình Baseline:**
-  * Sử dụng thuật toán `TF-IDF` kết hợp `Logistic Regression` (OneVsRest).
-  * *Ưu điểm:* Khả năng phân loại Intent cực kỳ nhanh và chính xác, đạt F1 0.77 trên tập dev.
-  * *Nhược điểm:* Việc gán nhãn Slot sử dụng bộ phân loại tuyến tính với cửa sổ token giới hạn (chỉ nhìn 2 âm tiết mỗi bên). Sự thiếu hụt ngữ cảnh toàn câu khiến Slot F1 chỉ đạt 0.55.
-* **2. Mô hình Deep Learning (Tối ưu hóa Slot):**
-  * Xây dựng kiến trúc `Joint Model` với bộ mã hóa dùng chung (`XLM-Roberta-Base`) kết nối ra 2 mạng tuyến tính riêng (Linear Heads) cho Intent và Slot.
-  * *Kỹ thuật cốt lõi:* Khắc phục triệt để hiện tượng Intent không học được (loss bị lấn át) bằng cách phân hóa Learning Rate. Lõi XLM-R bảo toàn kiến thức với tốc độ học chậm (`3e-5`), trong khi 2 Heads được học cấp tốc (`1e-3`).
-  * *Kết quả:* Nhờ cơ chế Attention đọc toàn bộ ngữ cảnh câu, điểm Slot nhảy vọt lên 0.72 F1.
-* **3. Kỹ thuật Ensemble (Late Fusion):**
-  * Tiến hành hợp nhất (merge) kết quả tốt nhất của cả 2 phương pháp: Cột `intent` lấy từ mô hình Baseline ghép với cột `slots` lấy từ mô hình XLM-R.
-  * Đạt mức điểm chung cuộc 0.75 F1 mà không phát sinh thêm chi phí tính toán GPU ở bước cuối.
-
-## Cấu trúc thư mục nlp_data_multi_intent_and_slot_filling lưu trên Google Drive
-
-```text
-├── train.csv                  # Dữ liệu huấn luyện
-├── dev.csv                    # Dữ liệu đánh giá cục bộ
-├── test.csv                   # Dữ liệu kiểm tra (để dự đoán nộp bài)
-├── intents.txt                # Danh sách các nhãn Intent
-├── slot_types.txt             # Danh sách các nhãn Slot
-├── sample_submission.csv      # File mẫu định dạng nộp bài
-├── scorer.py                  # Trình chấm điểm tại chỗ (Local Evaluation)
-└── README.md                  # Tài liệu mô tả dự án
