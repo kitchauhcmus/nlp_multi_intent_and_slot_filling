@@ -28,7 +28,7 @@ Tập dữ liệu xây dựng từ nguồn MASSIVE 1.1 đã được chuẩn hó
 * **Test set:** Gồm 2.727 câu ẩn nhãn dùng để dự đoán.
 * **Không gian nhãn:** Tổng cộng 60 ý định (Intent) và 54 loại thực thể (Slot). 
 
-## Cấu trúc Thư mục (Project Structure)
+## Cấu trúc thư mục nlp_data_multi_intent_and_slot_filling lưu trên Google Drive
 
 ```text
 ├── train.csv                  # Dữ liệu huấn luyện
