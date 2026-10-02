@@ -27,6 +27,12 @@ Mỗi token nhận đúng một nhãn. Nhãn `B-<loại>` đánh dấu token đ�
 text : gọi tôi dậy lúc chín giờ sáng ngày thứ sáu
 slots: 0 0 0 0 B-time I-time I-time 0 B-date I-date
 ```
+Với câu ghép hai yêu cầu, từ nối mang nhãn `0` và các cụm slot của cả hai vế được giữ nguyên:
+
+```text
+text : cài báo thức trong hai giờ kể từ bây giờ và thời tiết hôm nay thế nào
+slots: 0 0 0 0 B-time I-time I-time I-time I-time I-time 0 0 0 B-date I-date 0 0
+```
 
 ## Phương pháp thực hiện 
 Hệ thống chấm điểm đánh giá hiệu suất thông qua trung bình cộng của `Macro-F1 Intent` và `Micro-F1 Slot`. Nhằm tối ưu hóa đồng thời cả hai bài toán, dự án áp dụng chiến lược **Ensemble Prediction** bằng cách chắt lọc điểm mạnh từ 2 mô hình khác biệt:
