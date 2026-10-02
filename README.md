@@ -45,5 +45,52 @@ text : cài báo thức trong hai giờ kể từ bây giờ và thời tiết h
 slots: 0 0 0 0 B-time I-time I-time I-time I-time I-time 0 0 0 B-date I-date 0 0
 python3 scorer.py du_doan_dev.csv --gt dev.csv           # in Score, IntentF1, SlotF1
 python3 scorer.py du_doan_dev.csv --gt dev.csv --per-class # in thêm F1 của từng intent
+```
 
+## Dữ liệu
+
+Nút **Tải dữ liệu** trả về tệp `input.zip`[cite: 14]. Khi giải nén, tệp này tạo thư mục `public/` gồm các tệp dưới đây[cite: 14].
+
+### `train.csv`, `dev.csv`
+
+| Cột | Ý nghĩa |
+| :--- | :--- |
+| `id` | Mã câu duy nhất (`u00001` ...) |
+| `text` | Câu lệnh, chữ thường, các token cách nhau bằng một dấu cách |
+| `intent` | Một hoặc nhiều intent, nối với nhau bằng `#` |
+| `slots` | Nhãn BIO của từng token, cách nhau bằng dấu cách |
+
+`dev.csv` có cùng định dạng với `train.csv` và dùng để tự đánh giá[cite: 14]. Thí sinh được phép gộp dev vào train[cite: 14].
+
+### `test.csv`
+
+| Cột | Ý nghĩa |
+| :--- | :--- |
+| `id` | Mã câu cần dự đoán |
+| `text` | Câu lệnh |
+
+### `sample_submission.csv`
+
+Tệp mẫu này đúng định dạng bài nộp: mọi câu được gán intent `calendar_set` và mọi token được gán nhãn `O`[cite: 14]. Tệp hợp lệ nhưng chỉ được khoảng 0 điểm[cite: 14].
+
+### `intents.txt`, `slot_types.txt`
+
+Danh sách 60 intent và 54 loại slot xuất hiện trong train[cite: 15].
+
+### `scorer.py`
+
+Trình chấm chạy trên máy của thí sinh và cho cùng kết quả với trình chấm của nền tảng[cite: 15]:
+
+```bash
+python3 scorer.py du_doan_dev.csv --gt dev.csv           # in Score, IntentF1, SlotF1
+python3 scorer.py du_doan_dev.csv --gt dev.csv --per-class # in thêm F1 của từng intent
+
+## Định dạng bài nộp
+
+Tệp CSV mã hoá UTF-8, có dòng tiêu đề, gồm đúng 2.727 dòng dữ liệu (mỗi `id` của `test.csv` một dòng) với ba cột:
+
+```csv
+id,intent,slots
+u90001,alarm_set,0 0 0 0 B-time I-time I-time 0 B-date I-date
+u90002,alarm_set#weather_query,0 0 0 0 B-time I-time I-time I-time I-time I-time 0 0 0 B-date I-date 0 0
 
