@@ -7,6 +7,26 @@ Hệ thống trợ lý ảo cần hiểu được câu lệnh tiếng Việt c�
 1. **Intent (Ý định):** Xác định mục tiêu của người dùng muốn trợ lý làm gì; khoảng 13% số câu ghép hai yêu cầu bằng các từ nối như "và", "rồi", "sau đó", "với lại", "xong thì", "nhân tiện". Trong bài nộp, các ý định đa nhãn được phân tách bằng dấu `#` (ví dụ: `alarm_set#weather_query`).
 2. **Slot (Thực thể):** Trích xuất các cụm từ mang giá trị tham số của yêu cầu (như thời gian, địa điểm, thiết bị...). Mỗi token (âm tiết) trong câu sẽ được gán một nhãn duy nhất theo tiêu chuẩn BIO (Begin - Inside - Outside). Ví dụ cụm "chín giờ sáng" được gán chuỗi `B-time I-time I-time`.
 
+## 🎯 Nhiệm vụ
+
+### Intent đa nhãn
+Mỗi câu có một tập intent. Trong bài nộp, các intent của một câu được nối với nhau bằng dấu `#` và thứ tự không quan trọng.
+
+| Câu | intent |
+| :--- | :--- |
+| `gọi tôi dậy lúc chín giờ sáng ngày thứ sáu` | `alarm_set` |
+| `cài báo thức trong hai giờ kể từ bây giờ và thời tiết hôm nay thế nào` | `alarm_set#weather_query` |
+| `im lặng` | `audio_volume_mute` |
+
+Số câu của mỗi intent **chênh lệch rất nhiều**: `calendar_set` có hơn một nghìn câu train, trong khi `cooking_query` chỉ có vài câu.
+
+### Slot filling theo nhãn BIO
+Mỗi token nhận đúng một nhãn. Nhãn `B-<loại>` đánh dấu token đầu của một cụm, `I-<loại>` đánh dấu các token tiếp theo trong cùng cụm, và `0` dành cho token không thuộc cụm nào. Số nhãn của một câu phải **bằng đúng số token** của câu đó.
+
+```text
+text : gọi tôi dậy lúc chín giờ sáng ngày thứ sáu
+slots: 0 0 0 0 B-time I-time I-time 0 B-date I-date
+
 ## Phương pháp thực hiện 
 Hệ thống chấm điểm đánh giá hiệu suất thông qua trung bình cộng của `Macro-F1 Intent` và `Micro-F1 Slot`. Nhằm tối ưu hóa đồng thời cả hai bài toán, dự án áp dụng chiến lược **Ensemble Prediction** bằng cách chắt lọc điểm mạnh từ 2 mô hình khác biệt:
 
