@@ -1,17 +1,22 @@
-# NLP - Multi Intent and Slot Filling
+# 🚀 NLP Mini Contest 2026 - Joint Intent and Slot Filling
 
-Repository này chứa mã nguồn giải quyết bài toán đa nhiệm: Phân loại Ý định đa nhãn (Multi-label Intent) và Trích xuất Thực thể (Slot Filling) cho trợ lý ảo Tiếng Việt.
+Repository này chứa mã nguồn giải quyết bài toán đa nhiệm: Phân loại Ý định đa nhãn (Multi-label Intent) và Trích xuất Thực thể (Slot Filling) cho trợ lý ảo bằng tiếng Việt.
 
-## Chiến lược & Kết quả
-Bài toán đánh giá dựa trên `Macro-F1 Intent` và `Micro-F1 Slot`. Để đạt hiệu suất tối ưu (0.75 F1), hệ thống áp dụng kỹ thuật **Ensemble Prediction**:
-1. **Intent (Baseline):** Sử dụng `TF-IDF` kết hợp `Logistic Regression (OneVsRest)` cho tốc độ nhanh và độ chính xác Intent rất tốt (0.77 F1).
-2. **Slot (XLM-R Joint Model):** Xây dựng bộ mã hóa chia sẻ (`XLM-Roberta-Base`) với 2 Linear Heads. Áp dụng kỹ thuật phân tách Learning Rate (`3e-5` cho Encoder, `1e-3` cho Heads) để chống lại sự mất cân bằng Loss. Mô hình này xuất sắc ở bài toán Slot (0.72 F1).
-3. **Ensemble:** Hợp nhất cột `intent` từ Baseline và cột `slots` từ XLM-R để nộp bài.
+## 📊 Đặc tả Dữ liệu (Dataset)
+Tập dữ liệu của dự án được xây dựng dựa trên nguồn MASSIVE 1.1 (Amazon, giấy phép CC BY 4.0) dành riêng cho ngữ liệu tiếng Việt (vi-VN)[cite: 14]. Ban tổ chức đã xử lý câu trùng và ghép thêm câu nhiều ý định[cite: 14].
 
-## Cách chạy dự án
-1. Cài đặt thư viện: `pip install -r requirements.txt`
-2. Đặt dữ liệu vào thư mục `data/`.
-3. Chạy Baseline: `python 1_baseline.py`
-4. Chạy XLM-R: `python 2_xlmr_joint.py`
-5. Ghép file nộp bài: `python 3_ensemble.py`
-6. Upload file `sub_ghep.csv` lên hệ thống nền tảng.
+* **Train / Dev set:** Gồm 14.191 câu huấn luyện và 1.275 câu đánh giá có sẵn nhãn[cite: 14].
+* **Test set:** Gồm 2.727 câu ẩn nhãn dùng để chấm điểm trên hệ thống[cite: 14].
+* **Không gian nhãn:** Gồm 60 ý định (Intent) và 54 loại thực thể (Slot) được gán theo chuẩn BIO[cite: 14].
+* **Đánh giá (Metric):** Điểm chung cuộc là trung bình cộng của `Macro-F1 Intent` và `Micro-F1 Slot`[cite: 14].
+
+## 🧠 Cấu trúc Thư mục (Project Structure)
+```text
+├── data/
+│   ├── train.csv, dev.csv, test.csv
+│   └── intents.txt, slot_types.txt
+├── 1_baseline.py               # Thuật toán TF-IDF kết hợp Logistic Regression & SVM
+├── 2_xlmr_joint.py             # Kiến trúc XLM-Roberta chia 2 phân nhánh Linear Head
+├── 3_ensemble.py               # Hợp nhất kết quả từ 2 mô hình (Ensemble Prediction)
+├── requirements.txt
+└── README.md
