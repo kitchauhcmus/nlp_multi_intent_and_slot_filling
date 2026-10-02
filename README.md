@@ -22,12 +22,6 @@ Hệ thống chấm điểm đánh giá hiệu suất thông qua trung bình c�
   * Tiến hành hợp nhất (merge) kết quả tốt nhất của cả 2 phương pháp: Cột `intent` lấy từ mô hình Baseline ghép với cột `slots` lấy từ mô hình XLM-R.
   * Đạt mức điểm chung cuộc 0.75 F1 mà không phát sinh thêm chi phí tính toán GPU ở bước cuối.
 
-## Đặc tả dữ liệu
-Tập dữ liệu xây dựng từ nguồn MASSIVE 1.1 đã được chuẩn hóa riêng cho ngữ liệu tiếng Việt (vi-VN).
-* **Train / Dev set:** Gồm 14.191 câu huấn luyện và 1.275 câu đánh giá có đủ nhãn.
-* **Test set:** Gồm 2.727 câu ẩn nhãn dùng để dự đoán.
-* **Không gian nhãn:** Tổng cộng 60 ý định (Intent) và 54 loại thực thể (Slot). 
-
 ## Cấu trúc thư mục nlp_data_multi_intent_and_slot_filling lưu trên Google Drive
 
 ```text
