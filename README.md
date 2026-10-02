@@ -28,13 +28,14 @@ Tập dữ liệu xây dựng từ nguồn MASSIVE 1.1 đã được chuẩn hó
 * **Test set:** Gồm 2.727 câu ẩn nhãn dùng để dự đoán.
 * **Không gian nhãn:** Tổng cộng 60 ý định (Intent) và 54 loại thực thể (Slot). 
 
-## Cấu trúc Thư mục 
+## Cấu trúc Thư mục (Project Structure)
+
 ```text
-├── data/
-│   ├── train.csv, dev.csv, test.csv
-│   └── intents.txt, slot_types.txt
-├── 1_baseline.py               # Thuật toán TF-IDF kết hợp Logistic Regression & SVM
-├── 2_xlmr_joint.py             # Kiến trúc XLM-Roberta chia 2 phân nhánh Linear Head
-├── 3_ensemble.py               # Hợp nhất kết quả từ 2 mô hình (Ensemble Prediction)
-├── requirements.txt
-└── README.md
+├── train.csv                  # Dữ liệu huấn luyện
+├── dev.csv                    # Dữ liệu đánh giá cục bộ
+├── test.csv                   # Dữ liệu kiểm tra (để dự đoán nộp bài)
+├── intents.txt                # Danh sách các nhãn Intent
+├── slot_types.txt             # Danh sách các nhãn Slot
+├── sample_submission.csv      # File mẫu định dạng nộp bài
+├── scorer.py                  # Trình chấm điểm tại chỗ (Local Evaluation)
+└── README.md                  # Tài liệu mô tả dự án
