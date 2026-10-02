@@ -23,10 +23,10 @@ Hệ thống chấm điểm đánh giá hiệu suất thông qua trung bình c�
   * Đạt mức điểm chung cuộc 0.75 F1 mà không phát sinh thêm chi phí tính toán GPU ở bước cuối.
 
 ## Đặc tả dữ liệu
-Tập dữ liệu xây dựng từ nguồn MASSIVE 1.1 (Amazon) đã được chuẩn hóa riêng cho ngữ liệu tiếng Việt (vi-VN).
+Tập dữ liệu xây dựng từ nguồn MASSIVE 1.1 đã được chuẩn hóa riêng cho ngữ liệu tiếng Việt (vi-VN).
 * **Train / Dev set:** Gồm 14.191 câu huấn luyện và 1.275 câu đánh giá có đủ nhãn.
 * **Test set:** Gồm 2.727 câu ẩn nhãn dùng để dự đoán.
-* **Không gian nhãn:** Tổng cộng 60 ý định (Intent) và 54 loại thực thể (Slot).
+* **Không gian nhãn:** Tổng cộng 60 ý định (Intent) và 54 loại thực thể (Slot). 
 
 ## Cấu trúc Thư mục 
 ```text
