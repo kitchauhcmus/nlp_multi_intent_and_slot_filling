@@ -4,7 +4,7 @@ Repository này chứa mã nguồn giải quyết bài toán đa nhiệm: Phân 
 
 ## Mô tả Bài toán
 Hệ thống trợ lý ảo cần hiểu được câu lệnh tiếng Việt của người dùng (ví dụ: "gọi tôi dậy lúc chín giờ sáng ngày thứ sáu") thông qua hai nhiệm vụ thực thi song song:
-1. **Intent (Ý định):** Xác định mục tiêu của người dùng muốn trợ lý làm gì; khoảng 13 % số câu ghép hai yêu cầu bằng các từ nối như "và", "rồi", "sau đó", "với lại", "xong thì", "nhân tiện". Trong bài nộp, các ý định đa nhãn được phân tách bằng dấu `#` (ví dụ: `alarm_set#weather_query`)[cite: 15].
+1. **Intent (Ý định):** Xác định mục tiêu của người dùng muốn trợ lý làm gì; khoảng 13 % số câu ghép hai yêu cầu bằng các từ nối như "và", "rồi", "sau đó", "với lại", "xong thì", "nhân tiện". Trong bài nộp, các ý định đa nhãn được phân tách bằng dấu `#` (ví dụ: `alarm_set#weather_query`).
 2. **Slot (Thực thể):** Trích xuất các cụm từ mang giá trị tham số của yêu cầu (như thời gian, địa điểm, thiết bị...)[cite: 11]. Mỗi token (âm tiết) trong câu sẽ được gán một nhãn duy nhất theo tiêu chuẩn BIO (Begin - Inside - Outside)[cite: 11, 15]. Ví dụ cụm "chín giờ sáng" được gán chuỗi `B-time I-time I-time`[cite: 15].
 
 ## Phương pháp Thực hiện (Methodology)
