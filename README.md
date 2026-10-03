@@ -177,7 +177,7 @@ Bài toán gán nhãn chuỗi (Sequence Labeling) được giải quyết bằng
   *(Lưu ý: Nếu từ nằm ở đầu hoặc cuối câu, các vị trí bị hụt sẽ được tự động điền chuỗi rỗng `""` để lấp chỗ trống).*
 
 * **Bước 2: Chuẩn bị Dữ liệu (`feats` và `tags`)**
-  * `feats`: Hai vòng lặp `for` lồng nhau sẽ chẻ tung toàn bộ 14.191 câu Train ra thành từng âm tiết độc lập. Mỗi âm tiết biến thành một Dictionary đặc trưng như ví dụ trên. Kết quả là một mảng `feats_train` chứa hàng trăm ngàn phần tử.
+  * `feats`: Hai vòng lặp `for` lồng nhau sẽ duyệt qua toàn bộ 14.191 câu Train ra thành từng âm tiết độc lập. Mỗi âm tiết biến thành một Dictionary đặc trưng như ví dụ trên. Kết quả là một mảng `feats_train` chứa hàng trăm ngàn phần tử.
   * `tags`: Tương tự, mảng nhãn BIO cũng được cắt rời. Âm tiết "chín" có nhãn là `B-time`, thì nó được thêm vào mảng `tags_train`. (Độ dài của `tags` bắt buộc phải khớp tuyệt đối với `feats`).
 
 * **Bước 3: Vector hóa (`DictVectorizer`)**
