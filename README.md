@@ -123,3 +123,16 @@ Ví dụ với câu `gọi tôi dậy lúc chín giờ sáng ngày thứ sáu` ,
 | `O O O O B-time I-time I-time O B-date I-date` | 2 | 0 | 0 |
 | `O O O O B-time I-time O O B-date I-date` | 1 ( `date` ) | 1 ( `time` sai ranh giới) | 1 |
 | `O O O O B-time I-time I-time O B-time I-time` | 1 | 1 | 1 |
+
+## Cấu trúc thư mục dữ liệu
+
+```text
+public/
+|-- train.csv                 (14.191 câu có nhãn)
+|-- dev.csv                   (1.275 câu có nhãn)
+|-- test.csv                  (2.727 câu cần dự đoán)
+|-- sample_submission.csv
+|-- intents.txt               (60 intent)
+|-- slot_types.txt            (54 loại slot)
+|-- scorer.py                 (trình chấm chạy tại chỗ)
+`-- README.md
