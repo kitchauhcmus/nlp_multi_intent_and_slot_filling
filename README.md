@@ -110,13 +110,13 @@ Score = 0.5 × IntentF1 + 0.5 × SlotF1
 ```
 ### IntentF1: macro-F1 đa nhãn
 
-Với mỗi intent, đếm trên toàn bộ tập được chấm số câu dự đoán đúng intent đó (TP), số câu dự đoán thừa (FP) và số câu bỏ sót (FN), rồi tính F1 của intent đó[cite: 29]. IntentF1 là **trung bình cộng F1 của mọi intent xuất hiện trong đáp án hoặc trong dự đoán** (giống `sklearn.metrics.f1_score(average="macro")` )[cite: 29]. Vì vậy một intent hiếm có trọng số ngang một intent phổ biến, và một nhãn chỉ xuất hiện trong dự đoán cũng được tính vào trung bình với F1 bằng 0[cite: 29].
+Với mỗi intent, đếm trên toàn bộ tập được chấm số câu dự đoán đúng intent đó (TP), số câu dự đoán thừa (FP) và số câu bỏ sót (FN), rồi tính F1 của intent đó. IntentF1 là **trung bình cộng F1 của mọi intent xuất hiện trong đáp án hoặc trong dự đoán** (giống `sklearn.metrics.f1_score(average="macro")` ). Vì vậy một intent hiếm có trọng số ngang một intent phổ biến, và một nhãn chỉ xuất hiện trong dự đoán cũng được tính vào trung bình với F1 bằng 0.
 
 ### SlotF1: F1 mức thực thể
 
-SlotF1 là micro-F1 mức thực thể theo chuẩn conlleval / seqeval[cite: 29]. Một thực thể dự đoán được tính là đúng khi trùng cả **loại lẫn vị trí đầu và cuối** với một thực thể trong đáp án[cite: 29]. Nhãn `I-` không nối tiếp một nhãn cùng loại được coi là bắt đầu một thực thể mới (luật conlleval)[cite: 29].
+SlotF1 là micro-F1 mức thực thể theo chuẩn conlleval / seqeval. Một thực thể dự đoán được tính là đúng khi trùng cả **loại lẫn vị trí đầu và cuối** với một thực thể trong đáp án[cite: 29]. Nhãn `I-` không nối tiếp một nhãn cùng loại được coi là bắt đầu một thực thể mới (luật conlleval).
 
-Ví dụ với câu `gọi tôi dậy lúc chín giờ sáng ngày thứ sáu` , đáp án có hai thực thể: `time` = "chín giờ sáng" và `date` = "thứ sáu"[cite: 29].
+Ví dụ với câu `gọi tôi dậy lúc chín giờ sáng ngày thứ sáu` , đáp án có hai thực thể: `time` = "chín giờ sáng" và `date` = "thứ sáu".
 
 | Dự đoán | Đúng | Thừa | Sót |
 | :--- | :--- | :--- | :--- |
@@ -146,8 +146,8 @@ Hệ thống được thiết kế theo hướng tiếp cận độc lập, gi�
 
 **a. Phân loại Ý định (Intent Classification)**
 
-* **Bước 1: Trích xuất đặc trưng (Biến câu chữ thành vector X)**
-  Hệ thống kết hợp ưu điểm của hai bộ TF-IDF Vectorizer:
+* **Bước 1: Trích xuất đặc trưng**
+  Hệ thống kết hợp hai bộ TF-IDF Vectorizer:
   * `v_word` (Word n-grams 1-2): Trích các cụm từ khóa gồm 1-2 từ.
   * `v_char` (Character n-grams 1-4, chế độ `char_wb`): Trích xuất các đặc trưng hình thái từ (subwords) gồm 1-4 kí tự. Cài đặt `min_df=2` giúp loại bỏ nhiễu bằng cách chỉ giữ lại các n-gram xuất hiện trong ít nhất 2 câu lệnh khác nhau.
   * Khi ghép lại (`hstack`), mỗi câu train sẽ được biểu diễn thành một vector $X$ thưa (sparse vector) có số chiều bằng tổng số lượng đặc trưng từ vựng thu thập được từ toàn bộ dữ liệu huấn luyện (lên tới hàng chục ngàn chiều).
