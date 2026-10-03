@@ -164,18 +164,26 @@ Hệ thống được thiết kế theo hướng tiếp cận độc lập, gi�
 
 **b. Nhận diện Thực thể (Slot Filling)**
 
+Bài toán gán nhãn chuỗi (Sequence Labeling) được giải quyết bằng cách chẻ nhỏ toàn bộ câu thành các âm tiết độc lập, đưa về dạng phân loại đa lớp (Token-level Classification).
+
 * **Bước 1: Trích xuất đặc trưng (Kỹ thuật Cửa sổ trượt - Sliding Window)**
-  Hàm `tok_feats` được thiết kế để trượt một "cửa sổ" qua từng token trong câu nhằm thu thập ngữ cảnh cục bộ làm đặc trưng học. Với mỗi token đang xét, hệ thống trích xuất:
-  * *Ngữ cảnh không gian:* Lấy 2 token phía trước (`w-1`, `w-2`) và 2 token phía sau (`w+1`, `w+2`).
-  * *Ngữ cảnh chuỗi (Bigrams):* Ghép cặp token liền kề (`w-1|w`, `w|w+1`) để mô hình hiểu được sự liên kết từ vựng.
-  * *Đặc trưng hình thái:* Kiểm tra xem token hiện tại có phải là số hay không (`digit`).
-  Thông qua hai vòng lặp `for`, toàn bộ các câu trong tập train/test được tháo rời thành một mảng 1 chiều khổng lồ chứa đặc trưng của từng token độc lập.
+  Hàm `tok_feats` trượt một "cửa sổ" qua từng token trong câu nhằm thu thập ngữ cảnh cục bộ. Giả sử với câu: *"gọi tôi dậy lúc chín giờ sáng"*, khi vòng lặp chạy đến từ **"chín"** (vị trí `i = 4`), hàm sẽ soi xung quanh và tạo ra một Dictionary (từ điển) đặc trưng:
+  * `w(0)` (Từ hiện tại): `"chín"`
+  * `w-1`, `w-2` (Bên trái 1-2 bước): `"lúc"`, `"dậy"`
+  * `w+1`, `w+2` (Bên phải 1-2 bước): `"giờ"`, `"sáng"`
+  * `w-1|w` (Cụm 2 từ trái): `"lúc|chín"`
+  * `w|w+1` (Cụm 2 từ phải): `"chín|giờ"`
+  * `digit`: `False` (Kiểm tra xem "chín" có phải là con số toán học không).
+  *(Lưu ý: Nếu từ nằm ở đầu hoặc cuối câu, các vị trí bị hụt sẽ được tự động điền chuỗi rỗng `""` để lấp chỗ trống).*
 
-* **Bước 2: Vector hóa (DictVectorizer)**
-  Vì đặc trưng của mỗi token đang ở dạng từ điển (Dictionary), hệ thống sử dụng `DictVectorizer` để ánh xạ trực tiếp các từ điển này thành ma trận số thưa (sparse matrix). Kỹ thuật này giúp tiết kiệm tối đa tài nguyên RAM khi phải xử lý hàng trăm ngàn token.
+* **Bước 2: Chuẩn bị Dữ liệu (`feats` và `tags`)**
+  * `feats`: Hai vòng lặp `for` lồng nhau sẽ chẻ tung toàn bộ 14.191 câu Train ra thành từng âm tiết độc lập. Mỗi âm tiết biến thành một Dictionary đặc trưng như ví dụ trên. Kết quả là một mảng `feats_train` chứa hàng trăm ngàn phần tử.
+  * `tags`: Tương tự, mảng nhãn BIO cũng được cắt rời. Âm tiết "chín" có nhãn là `B-time`, thì nó được thêm vào mảng `tags_train`. (Độ dài của `tags` bắt buộc phải khớp tuyệt đối với `feats`).
 
-* **Bước 3: Huấn luyện mô hình (Linear SVM)**
-  Hệ thống sử dụng `SGDClassifier` với cấu hình hàm mất mát `loss="hinge"` (bản chất toán học chính là một mô hình Linear SVM). Việc huấn luyện SVM thông qua thuật toán Tối ưu dốc ngẫu nhiên (Stochastic Gradient Descent) kết hợp tham số điều chuẩn `alpha=2e-6` giúp mô hình học cực kỳ nhanh và hội tụ chỉ sau vài chục vòng lặp (`max_iter=30`).
+* **Bước 3: Vector hóa (`DictVectorizer`)**
+  Máy học không đọc được các Dictionary chữ. Hàm `dv = DictVectorizer()` sẽ quét qua hàng trăm ngàn Dictionary kia, gom tất cả các giá trị độc nhất lại để tạo ra một ma trận siêu thưa (sparse matrix). Nó hoạt động tương tự như việc tạo ra tờ phiếu checklist đặc trưng cho từng âm tiết độc lập.
 
-* **Bước 4: Khôi phục chuỗi (Reconstruction) và Ghép kết quả**
-  Sau khi dự đoán, kết quả trả về (`preds_slot`) là một mảng 1 chiều chứa nhãn của toàn bộ các token liên tiếp nhau. Để khôi phục định dạng nộp bài, hệ thống duyệt lại từng câu trong tập test, đếm chính xác số lượng từ gốc (`length`), và dùng một con trỏ `idx` trượt trên mảng dự đoán để cắt ra đúng số lượng nhãn. Các nhãn này được ghép lại bằng dấu cách và lưu vào DataFrame cùng với dự đoán của Intent.
+* **Bước 4: Huấn luyện SVM (`SGDClassifier`)**
+  * **SGD (Stochastic Gradient Descent):** Là thuật toán tối ưu hóa siêu tốc, cực kỳ phù hợp cho dữ liệu lớn.
+  * **loss="hinge":** Chính tham số này đã biến thuật toán SGD thành một mô hình **Linear Support Vector Machine (SVM)** đa lớp. SVM sẽ cố gắng vẽ ra các siêu phẳng để phân chia hàng trăm ngàn vector đặc trưng kia vào đúng 54 nhóm slot khác nhau.
+  * **Khôi phục chuỗi:** Kết quả dự đoán `preds_slot` trả về là một mảng 1 chiều. Hệ thống sẽ dùng một con trỏ `idx` cắt tuần tự theo đúng số lượng token của từng câu test ban đầu để ghép lại thành chuỗi nhãn hoàn chỉnh.
