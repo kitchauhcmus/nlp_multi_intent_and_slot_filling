@@ -142,7 +142,7 @@ public/
 ```
 ## Phương pháp thực hiện
 
-Hệ thống được thiết kế theo hướng tiếp cận độc lập, giải quyết song song hai bài toán Intent Classification và Slot Filling.
+### 1. Huấn luyện mô hình Baseline (TF-IDF & SVM)
 
 **a. Phân loại Ý định (Intent Classification)**
 
@@ -198,7 +198,7 @@ Bài toán gán nhãn chuỗi (Sequence Labeling) được giải quyết bằng
   * **loss="hinge":** Chính tham số này đã biến thuật toán SGD thành một mô hình **Linear Support Vector Machine (SVM)** đa lớp. SVM sẽ cố gắng vẽ ra các siêu phẳng để phân chia hàng trăm ngàn vector đặc trưng kia vào đúng 54 nhóm slot khác nhau.
   * **Khôi phục chuỗi:** Kết quả dự đoán `preds_slot` trả về là một mảng 1 chiều. Hệ thống sẽ dùng một con trỏ `idx` cắt tuần tự theo đúng số lượng token của từng câu test ban đầu để ghép lại thành chuỗi nhãn hoàn chỉnh.
 
-### 2. Mô hình Học sâu (Joint Model với XLM-RoBERTa)
+### 2. Huấn luyện XLM-R
 
 Khối mã nguồn này triển khai kiến trúc **Học đa nhiệm (Multi-task Learning)**. Thay vì dùng cửa sổ trượt như SVM, hệ thống sử dụng chung một "bộ não" (Encoder XLM-R) kết hợp với 2 "cái đầu" phân loại (Linear Heads) riêng biệt để dự đoán đồng thời Ý định (Intent) và Thực thể (Slot)[cite: 21].
 
