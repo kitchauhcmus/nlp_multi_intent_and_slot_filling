@@ -82,7 +82,7 @@ Trình chấm chạy trên máy của thí sinh và cho cùng kết quả với 
 ```bash
 python3 scorer.py du_doan_dev.csv --gt dev.csv           # in Score, IntentF1, SlotF1
 python3 scorer.py du_doan_dev.csv --gt dev.csv --per-class # in thêm F1 của từng intent
-
+```
 ## Định dạng bài nộp
 
 Tệp CSV mã hoá UTF-8, có dòng tiêu đề, gồm đúng 2.727 dòng dữ liệu (mỗi `id` của `test.csv` một dòng) với ba cột:
