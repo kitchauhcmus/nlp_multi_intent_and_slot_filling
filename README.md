@@ -150,18 +150,18 @@ Hệ thống được thiết kế theo hướng tiếp cận độc lập, gi�
 
 * **Bước 1: Trích xuất đặc trưng (Biến câu chữ thành vector X)**
   Hệ thống kết hợp ưu điểm của hai bộ TF-IDF Vectorizer:
-  * `v_word` (Word n-grams 1-2): Trích các cụm từ khóa gồm 1-2 từ
-  * `v_char` (Character n-grams 1-4, chế độ `char_wb`): Trích xuất các đặc trưng hình thái từ (subwords) gồm 1-4 kí tự, ngoài ra kí tự đó phải xuất hiện ít nhất 2 lần.
-  * Khi ghép lại (`hstack`), mỗi câu trong hơn 14.000 câu train sẽ được biểu diễn thành một vector $X$ có độ dài là tổng của số đặc trưng trích xuất từ v_word và v_char
-  * *Lưu ý:* Tham số `sublinear_tf=True` được sử dụng để áp dụng công thức `1 + ln(TF)`, giúp giảm bớt trọng số quá lớn của các từ khóa xuất hiện với tần suất quá dày đặc.
+  * `v_word` (Word n-grams 1-2): Trích các cụm từ khóa gồm 1-2 từ.
+  * `v_char` (Character n-grams 1-4, chế độ `char_wb`): Trích xuất các đặc trưng hình thái từ (subwords) gồm 1-4 kí tự. Cài đặt `min_df=2` giúp loại bỏ nhiễu bằng cách chỉ giữ lại các n-gram xuất hiện trong ít nhất 2 câu lệnh khác nhau.
+  * Khi ghép lại (`hstack`), mỗi câu trong hơn 14.000 câu train sẽ được biểu diễn thành một vector $X$ có độ dài là tổng của số đặc trưng trích xuất từ `v_word` và `v_char`.
+  * *Lưu ý:* Tham số `sublinear_tf=True` được sử dụng để áp dụng công thức $1 + \ln(TF)$, giúp giảm bớt trọng số quá lớn của các từ khóa xuất hiện với tần suất quá dày đặc.
 
 * **Bước 2: Xây dựng nhãn (Vector Y)**
   Tập dữ liệu có tổng cộng 60 intent. Với mỗi câu, intent nào xuất hiện thì đánh số 1, không có thì đánh số 0 (sử dụng `MultiLabelBinarizer`). Lúc này, nhãn của mỗi câu sẽ được mã hóa thành một vector $Y$ gồm đúng 60 con số.
 
 * **Bước 3: Huấn luyện 60 mô hình Logistic Regression**
-  Sử dụng chiến lược `OneVsRestClassifier`, hệ thống tạo ra 60 mô hình Logistic Regression độc lập, mỗi mô hình chuyên nhận diện 1 intent cụ thể. Quá trình train diễn ra bằng cách cho 14.000 vector $X$ và vector $Y$ chạy qua từng mô hình. Thuật toán `liblinear` được cấu hình để giải quyết cực nhanh các ma trận thưa (sparse matrix) 13.000 chiều này.
+  Sử dụng chiến lược `OneVsRestClassifier`, hệ thống tạo ra 60 mô hình Logistic Regression độc lập, mỗi mô hình chuyên nhận diện 1 intent cụ thể. Quá trình train diễn ra bằng cách cho 14.000 vector $X$ và vector $Y$ chạy qua từng mô hình. Hệ thống sử dụng thuật toán `liblinear` kết hợp siêu tham số nghịch đảo chuẩn hóa `C=10` để tối ưu hóa việc phân tách các ma trận thưa (sparse matrix) 13.000 chiều này một cách triệt để và nhanh chóng.
 
-* **Bước 4: Thresholding & Fallback**
+* **Bước 4: Thresholding & Fallback (Ngưỡng dự đoán & Kế hoạch dự phòng)**
   Khi có một câu test mới, câu đó sẽ được vector hóa thành vector $X$ và đi qua toàn bộ 60 mô hình trên. Mô hình nào dự đoán xác suất $\ge 0.5$ thì hệ thống sẽ lấy nhãn đó. Trong trường hợp hiếm hoi mô hình "phân vân" không có nhãn nào đạt ngưỡng, hệ thống tự động fallback lấy duy nhất nhãn có xác suất cao nhất (`argmax`) để đảm bảo bài nộp luôn hợp lệ.
 
 **b. Nhận diện Thực thể (Slot Filling)**
