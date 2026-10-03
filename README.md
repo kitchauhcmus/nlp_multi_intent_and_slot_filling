@@ -164,8 +164,6 @@ Hệ thống được thiết kế theo hướng tiếp cận độc lập, gi�
 
 **b. Nhận diện Thực thể (Slot Filling)**
 
-Bài toán gán nhãn chuỗi (Sequence Labeling) được tiếp cận bằng cách "phẳng hóa" (flatten) toàn bộ dữ liệu, biến nó thành bài toán phân loại đa lớp ở mức độ từng từ (Token-level Classification). Ý tưởng được triển khai qua các bước sau:
-
 * **Bước 1: Trích xuất đặc trưng (Kỹ thuật Cửa sổ trượt - Sliding Window)**
   Hàm `tok_feats` được thiết kế để trượt một "cửa sổ" qua từng token trong câu nhằm thu thập ngữ cảnh cục bộ làm đặc trưng học. Với mỗi token đang xét, hệ thống trích xuất:
   * *Ngữ cảnh không gian:* Lấy 2 token phía trước (`w-1`, `w-2`) và 2 token phía sau (`w+1`, `w+2`).
