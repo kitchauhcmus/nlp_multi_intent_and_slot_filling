@@ -181,7 +181,17 @@ Bài toán gán nhãn chuỗi (Sequence Labeling) được giải quyết bằng
   * `tags`: Tương tự, mảng nhãn BIO cũng được cắt rời. Âm tiết "chín" có nhãn là `B-time`, thì nó được thêm vào mảng `tags_train`. (Độ dài của `tags` bắt buộc phải khớp tuyệt đối với `feats`).
 
 * **Bước 3: Vector hóa (`DictVectorizer`)**
-  Máy học không đọc được các Dictionary chữ. Hàm `dv = DictVectorizer()` sẽ quét qua hàng trăm ngàn Dictionary kia, gom tất cả các giá trị độc nhất lại để tạo ra một ma trận siêu thưa (sparse matrix). Nó hoạt động tương tự như việc tạo ra tờ phiếu checklist đặc trưng cho từng âm tiết độc lập.
+  Máy học không đọc được các Dictionary chữ. Hàm `dv = DictVectorizer()` sẽ quét qua hàng trăm ngàn Dictionary kia, gom tất cả các giá trị độc nhất lại để tạo ra một ma trận siêu thưa (sparse matrix). Nó hoạt động tương tự như việc tạo ra một "tờ phiếu checklist" khổng lồ cho toàn bộ tập dữ liệu.
+  
+  *Ví dụ trực quan:* Giả sử hàm nhận vào 2 Dictionary của 2 từ liên tiếp:
+  1. Từ "chín": `{"w(0)": "chín", "w-1": "lúc"}`
+  2. Từ "giờ": `{"w(0)": "giờ", "w-1": "chín"}`
+  
+  `DictVectorizer` sẽ gom tất cả các cặp key-value này lại để tạo thành một bảng checklist (không gian đặc trưng) gồm 4 cột: `[w(0)=chín]`, `[w-1=lúc]`, `[w(0)=giờ]`, `[w-1=chín]`. Lúc này, các Dictionary chữ sẽ được chuyển hóa thành các vector số học (One-hot encoding):
+  * Vector của từ "chín": `[1, 1, 0, 0]` (Có 2 đặc trưng đầu, không có 2 đặc trưng sau).
+  * Vector của từ "giờ": `[0, 0, 1, 1]` (Không có 2 đặc trưng đầu, có 2 đặc trưng sau).
+  
+  Thông qua phép biến đổi này, hàng triệu tổ hợp từ vựng và ngữ cảnh khác nhau trong ngôn ngữ tự nhiên đã được mã hóa thành các điểm dữ liệu trong không gian toán học để mô hình SVM tiến hành phân loại.
 
 * **Bước 4: Huấn luyện SVM (`SGDClassifier`)**
   * **SGD (Stochastic Gradient Descent):** Là thuật toán tối ưu hóa siêu tốc, cực kỳ phù hợp cho dữ liệu lớn.
