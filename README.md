@@ -147,13 +147,24 @@ Hệ thống được thiết kế theo hướng tiếp cận độc lập, gi�
 ### 1. Mô hình Baseline (TF-IDF & SVM)
 
 **a. Phân loại Ý định (Intent Classification)**
-Bài toán được tiếp cận dưới dạng **Multi-label Classification** để xử lý các câu lệnh chứa từ 2 ý định trở lên.
-* **Trích xuất đặc trưng:** Kết hợp sức mạnh của hai bộ TF-IDF Vectorizer:
-  * *Word n-grams (1-2):* Bắt các cụm từ khóa có ý nghĩa ngữ nghĩa trực tiếp.
-  * *Character n-grams (1-4, chế độ char_wb):* Bắt các đặc trưng hình thái từ (subwords), giúp mô hình có sức chịu đựng tốt hơn với lỗi chính tả hoặc từ dính liền.
-  * Sử dụng tham số `sublinear_tf=True` (áp dụng công thức $1 + \ln(TF)$) để giảm bớt sự thống trị của các từ khóa xuất hiện với tần suất quá dày đặc.
-* **Mô hình học máy:** Sử dụng `LogisticRegression` kết hợp với `OneVsRestClassifier`. Solver `liblinear` được chọn để xử lý cực nhanh các ma trận thưa (sparse matrix) nhiều chiều.
-* **Luật dự đoán (Thresholding & Fallback):** Lựa chọn tất cả các nhãn có xác suất $\ge 0.5$. Trong trường hợp ngoại lệ khi mô hình phân vân (không có nhãn nào đạt ngưỡng), hệ thống tự động fallback chọn nhãn có xác suất cao nhất (`argmax`) để đảm bảo tính hợp lệ của bài nộp.
+
+Bài toán được tiếp cận dưới dạng **Multi-label Classification** để xử lý các câu lệnh chứa từ 2 ý định trở lên. Ý tưởng xử lý dữ liệu được thiết kế cụ thể như sau:
+
+* **Bước 1: Trích xuất đặc trưng (Biến câu chữ thành vector X)**
+  Hệ thống kết hợp sức mạnh của hai bộ TF-IDF Vectorizer:
+  * `v_word` (Word n-grams 1-2): Bắt các cụm từ khóa, trích xuất được khoảng 8.000 đặc trưng.
+  * `v_char` (Character n-grams 1-4, chế độ `char_wb`): Bắt các đặc trưng hình thái từ (subwords), trích xuất khoảng 5.000 đặc trưng.
+  * Khi ghép lại (`hstack`), mỗi câu trong hơn 14.000 câu train sẽ được biểu diễn thành một vector $X$ có độ dài khoảng 13.000 con số.
+  * *Lưu ý:* Tham số `sublinear_tf=True` được sử dụng để áp dụng công thức `1 + ln(TF)`, giúp giảm bớt sự thống trị của các từ khóa xuất hiện với tần suất quá dày đặc.
+
+* **Bước 2: Xây dựng nhãn (Vector Y)**
+  Tập dữ liệu có tổng cộng 60 intent. Với mỗi câu, intent nào xuất hiện thì đánh số 1, không có thì đánh số 0 (sử dụng `MultiLabelBinarizer`). Lúc này, nhãn của mỗi câu sẽ được mã hóa thành một vector $Y$ gồm đúng 60 con số.
+
+* **Bước 3: Huấn luyện 60 mô hình Logistic Regression**
+  Sử dụng chiến lược `OneVsRestClassifier`, hệ thống tạo ra 60 mô hình Logistic Regression độc lập, mỗi mô hình chuyên nhận diện 1 intent cụ thể. Quá trình train diễn ra bằng cách cho 14.000 vector $X$ và vector $Y$ chạy qua từng mô hình. Thuật toán `liblinear` được cấu hình để giải quyết cực nhanh các ma trận thưa (sparse matrix) 13.000 chiều này.
+
+* **Bước 4: Luật dự đoán (Thresholding & Fallback)**
+  Khi có một câu test mới, câu đó sẽ được vector hóa thành vector $X$ và đi qua toàn bộ 60 mô hình trên. Mô hình nào dự đoán xác suất $\ge 0.5$ thì hệ thống sẽ lấy nhãn đó. Trong trường hợp hiếm hoi mô hình "phân vân" không có nhãn nào đạt ngưỡng, hệ thống tự động fallback lấy duy nhất nhãn có xác suất cao nhất (`argmax`) để đảm bảo bài nộp luôn hợp lệ.
 
 **b. Nhận diện Thực thể (Slot Filling)**
 Bài toán Sequence Labeling được đơn giản hóa thành bài toán phân loại đa lớp ở mức độ từng token (Token-level Classification).
