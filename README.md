@@ -197,3 +197,28 @@ Bài toán gán nhãn chuỗi (Sequence Labeling) được giải quyết bằng
   * **SGD (Stochastic Gradient Descent):** Là thuật toán tối ưu hóa siêu tốc, cực kỳ phù hợp cho dữ liệu lớn.
   * **loss="hinge":** Chính tham số này đã biến thuật toán SGD thành một mô hình **Linear Support Vector Machine (SVM)** đa lớp. SVM sẽ cố gắng vẽ ra các siêu phẳng để phân chia hàng trăm ngàn vector đặc trưng kia vào đúng 54 nhóm slot khác nhau.
   * **Khôi phục chuỗi:** Kết quả dự đoán `preds_slot` trả về là một mảng 1 chiều. Hệ thống sẽ dùng một con trỏ `idx` cắt tuần tự theo đúng số lượng token của từng câu test ban đầu để ghép lại thành chuỗi nhãn hoàn chỉnh.
+
+### 2. Mô hình Học sâu (Joint Model với XLM-RoBERTa)
+
+Để vượt qua giới hạn về "tầm nhìn hẹp" của mô hình tuyến tính, hệ thống triển khai kiến trúc **Học đa nhiệm (Multi-task Learning)** bằng bộ trọng số ngôn ngữ lớn `xlm-roberta-base`. Kiến trúc này tận dụng cơ chế Self-Attention để nhìn nhận ngữ cảnh của toàn bộ câu, cho phép dự đoán đồng thời Intent và Slot trong cùng một lần chạy (forward pass).
+
+Quá trình vận hành của mô hình được thiết kế qua 4 bước cốt lõi:
+
+* **Bước 1: Tiền xử lý & Căn chỉnh Subword (Token Alignment)**
+  Các mô hình họ RoBERTa sử dụng bộ Tokenizer băm từ vựng thành các âm tiết nhỏ (subwords). Điều này làm xô lệch độ dài của chuỗi nhãn gốc. Hàm `__getitem__` trong `NLPDataset` xử lý triệt để vấn đề này bằng cách:
+  * Gọi `word_ids()` để ánh xạ từng subword về vị trí từ gốc ban đầu.
+  * Chỉ gán nhãn thực tế cho subword đầu tiên của một từ. Các token đệm (`<pad>`), token đặc biệt (`<s>`, `</s>`) và các subword thừa phía sau đều bị ép mang nhãn `-100`. Tham số `-100` là cờ hiệu (ignore_index) mặc định của PyTorch, báo cho hàm Loss bỏ qua hoàn toàn các vị trí này khi tính toán sai số.
+
+* **Bước 2: Phân nhánh Kiến trúc (Linear Heads)**
+  Class `Joint(nn.Module)` nhận đầu vào là các token đã mã hóa và đưa qua lõi XLM-R để trích xuất một khối ma trận đặc trưng có chiều sâu 768 chiều. Khối dữ liệu này lập tức được chẻ làm 2 nhánh mạng tuyến tính (Linear layer):
+  * **Nhánh Intent (`int_head`):** Trích xuất duy nhất token đầu tiên của câu `H[:, 0]` (tương đương token `<s>` đại diện ngữ cảnh toàn câu) và hạ chiều từ 768 xuống 60 (tương ứng 60 intents).
+  * **Nhánh Slot (`slot_head`):** Đưa toàn bộ chuỗi token `H` qua mạng biến đổi, hạ chiều không gian từ 768 xuống 54 (tương ứng 54 slots) cho mỗi token.
+
+* **Bước 3: Tối ưu hóa & Phân hóa Tốc độ học (Differential Learning Rate)**
+  Thay vì huấn luyện 2 mô hình rời rạc, hệ thống tính toán đồng thời:
+  * Sai số Intent: Dùng `BCEWithLogitsLoss` để giải quyết bài toán Multi-label.
+  * Sai số Slot: Dùng `CrossEntropyLoss` kết hợp `ignore_index=-100`.
+  Tổng sai số ($Loss = BCE + CE$) được lan truyền ngược để cập nhật trọng số. Thuật toán **AdamW** được thiết lập với tốc độ học phân hóa: phần lõi XLM-R được cho học chậm ($lr = 3\text{e-}5$) để bảo toàn tri thức ngôn ngữ, trong khi 2 nhánh Linear phân loại được cho học nhanh ($lr = 1\text{e-}3$) để ép mô hình thích nghi tức thời với dữ liệu cuộc thi.
+
+* **Bước 4: Khôi phục chuỗi nhãn (Reconstruction)**
+  Trong quá trình dự đoán (Inference), mô hình trả về ma trận xác suất cho toàn bộ chuỗi token (bao gồm cả padding và subwords). Hệ thống sử dụng lại danh sách `word_ids` đã lưu, áp dụng kỹ thuật lọc tương tự Bước 1 để loại bỏ các token dư thừa. Kết quả cuối cùng là một chuỗi nhãn Slot có số lượng khớp tuyệt đối với số lượng từ vựng của câu gốc ban đầu, sẵn sàng cho việc ghép nối nội dung nộp bài.
