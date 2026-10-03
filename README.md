@@ -100,3 +100,26 @@ Hai dòng trên dùng lại hai câu ví dụ ở tab Đề bài với `id` minh
 * Cột `intent` có ít nhất một nhãn; nhiều nhãn thì nối bằng `#`. Nhãn lặp lại chỉ tính một lần. Nhãn không có trong `intents.txt` được tính là dự đoán sai.
 * Cột `slots` có số nhãn bằng số token của `text`. Nếu số nhãn lệch, câu đó được coi là **không dự đoán thực thể nào**: câu đó mất toàn bộ điểm slot, các câu khác vẫn được chấm bình thường.
 * Bài nộp sai định dạng không làm hỏng việc chấm; ô lỗi chỉ nhận 0 điểm.
+
+## Phương pháp đánh giá
+
+Điểm của bài nộp là trung bình cộng của hai thành phần:
+
+```text
+Score = 0.5 × IntentF1 + 0.5 × SlotF1
+```
+### IntentF1: macro-F1 đa nhãn
+
+Với mỗi intent, đếm trên toàn bộ tập được chấm số câu dự đoán đúng intent đó (TP), số câu dự đoán thừa (FP) và số câu bỏ sót (FN), rồi tính F1 của intent đó[cite: 29]. IntentF1 là **trung bình cộng F1 của mọi intent xuất hiện trong đáp án hoặc trong dự đoán** (giống `sklearn.metrics.f1_score(average="macro")` )[cite: 29]. Vì vậy một intent hiếm có trọng số ngang một intent phổ biến, và một nhãn chỉ xuất hiện trong dự đoán cũng được tính vào trung bình với F1 bằng 0[cite: 29].
+
+### SlotF1: F1 mức thực thể
+
+SlotF1 là micro-F1 mức thực thể theo chuẩn conlleval / seqeval[cite: 29]. Một thực thể dự đoán được tính là đúng khi trùng cả **loại lẫn vị trí đầu và cuối** với một thực thể trong đáp án[cite: 29]. Nhãn `I-` không nối tiếp một nhãn cùng loại được coi là bắt đầu một thực thể mới (luật conlleval)[cite: 29].
+
+Ví dụ với câu `gọi tôi dậy lúc chín giờ sáng ngày thứ sáu` , đáp án có hai thực thể: `time` = "chín giờ sáng" và `date` = "thứ sáu"[cite: 29].
+
+| Dự đoán | Đúng | Thừa | Sót |
+| :--- | :--- | :--- | :--- |
+| `O O O O B-time I-time I-time O B-date I-date` | 2 | 0 | 0 |
+| `O O O O B-time I-time O O B-date I-date` | 1 ( `date` ) | 1 ( `time` sai ranh giới) | 1 |
+| `O O O O B-time I-time I-time O B-time I-time` | 1 | 1 | 1 |
