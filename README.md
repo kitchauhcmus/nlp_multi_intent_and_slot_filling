@@ -139,3 +139,27 @@ public/
 |-- slot_types.txt            (54 loại slot)
 |-- scorer.py                 (trình chấm chạy tại chỗ)
 `-- README.md
+```
+## Phương pháp thực hiện
+
+Hệ thống được thiết kế theo hướng tiếp cận độc lập, giải quyết song song hai bài toán Intent Classification và Slot Filling.
+
+### 1. Mô hình Baseline (TF-IDF & Linear Model)
+
+**a. Phân loại Ý định (Intent Classification)**
+Bài toán được tiếp cận dưới dạng **Multi-label Classification** để xử lý các câu lệnh chứa từ 2 ý định trở lên.
+* **Trích xuất đặc trưng:** Kết hợp sức mạnh của hai bộ TF-IDF Vectorizer:
+  * *Word n-grams (1-2):* Bắt các cụm từ khóa có ý nghĩa ngữ nghĩa trực tiếp.
+  * *Character n-grams (1-4, chế độ char_wb):* Bắt các đặc trưng hình thái từ (subwords), giúp mô hình có sức chịu đựng tốt hơn với lỗi chính tả hoặc từ dính liền.
+  * Sử dụng tham số `sublinear_tf=True` (áp dụng công thức $1 + \ln(TF)$) để giảm bớt sự thống trị của các từ khóa xuất hiện với tần suất quá dày đặc.
+* **Mô hình học máy:** Sử dụng `LogisticRegression` kết hợp với `OneVsRestClassifier`. Solver `liblinear` được chọn để xử lý cực nhanh các ma trận thưa (sparse matrix) nhiều chiều.
+* **Luật dự đoán (Thresholding & Fallback):** Lựa chọn tất cả các nhãn có xác suất $\ge 0.5$. Trong trường hợp ngoại lệ khi mô hình phân vân (không có nhãn nào đạt ngưỡng), hệ thống tự động fallback chọn nhãn có xác suất cao nhất (`argmax`) để đảm bảo tính hợp lệ của bài nộp.
+
+**b. Nhận diện Thực thể (Slot Filling)**
+Bài toán Sequence Labeling được đơn giản hóa thành bài toán phân loại đa lớp ở mức độ từng token (Token-level Classification).
+* **Kỹ thuật Cửa sổ trượt (Sliding Window):** Hàm `tok_feats` được thiết kế để trượt qua từng token trong câu, thu thập ngữ cảnh cục bộ làm đặc trưng:
+  * Ngữ cảnh không gian: Lấy 2 token phía trước (`w-1`, `w-2`) và 2 token phía sau (`w+1`, `w+2`).
+  * Ngữ cảnh chuỗi (Bigrams): Ghép cặp token liền kề (`w-1|w`, `w|w+1`).
+  * Đặc trưng hình thái học: Xác định token có chứa chữ số hay không (`digit`).
+* **Mô hình học máy:** Sử dụng `DictVectorizer` để biến đổi các từ điển đặc trưng thành ma trận số. Sau đó, huấn luyện bằng `SGDClassifier` với hàm mất mát `hinge` (bản chất là một Linear SVM). Thuật toán tối ưu dốc ngẫu nhiên (SGD) giúp mô hình hội tụ cực nhanh trên tập dữ liệu hàng trăm nghìn token.
+* **Khôi phục chuỗi:** Phân loại toàn bộ token của tập test trong một mảng phẳng 1 chiều, sau đó dùng con trỏ `idx` cắt tuần tự theo đúng số lượng token của từng câu ban đầu để ghép lại chuỗi nhãn BIO chuẩn xác.
