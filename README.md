@@ -163,10 +163,21 @@ Hệ thống được thiết kế theo hướng tiếp cận độc lập, gi�
   Khi có một câu test mới, câu đó sẽ được vector hóa thành vector $X$ và đi qua toàn bộ 60 mô hình trên. Mô hình nào dự đoán xác suất $\ge 0.5$ thì hệ thống sẽ lấy nhãn đó. Trong trường hợp hiếm hoi mô hình "phân vân" không có nhãn nào đạt ngưỡng, hệ thống tự động fallback lấy duy nhất nhãn có xác suất cao nhất (`argmax`) để đảm bảo bài nộp luôn hợp lệ.
 
 **b. Nhận diện Thực thể (Slot Filling)**
-Bài toán Sequence Labeling được đơn giản hóa thành bài toán phân loại đa lớp ở mức độ từng token (Token-level Classification).
-* **Kỹ thuật Cửa sổ trượt (Sliding Window):** Hàm `tok_feats` được thiết kế để trượt qua từng token trong câu, thu thập ngữ cảnh cục bộ làm đặc trưng:
-  * Ngữ cảnh không gian: Lấy 2 token phía trước (`w-1`, `w-2`) và 2 token phía sau (`w+1`, `w+2`).
-  * Ngữ cảnh chuỗi (Bigrams): Ghép cặp token liền kề (`w-1|w`, `w|w+1`).
-  * Đặc trưng hình thái học: Xác định token có chứa chữ số hay không (`digit`).
-* **Mô hình học máy:** Sử dụng `DictVectorizer` để biến đổi các từ điển đặc trưng thành ma trận số. Sau đó, huấn luyện bằng `SGDClassifier` với hàm mất mát `hinge` (bản chất là một Linear SVM). Thuật toán tối ưu dốc ngẫu nhiên (SGD) giúp mô hình hội tụ cực nhanh trên tập dữ liệu hàng trăm nghìn token.
-* **Khôi phục chuỗi:** Phân loại toàn bộ token của tập test trong một mảng phẳng 1 chiều, sau đó dùng con trỏ `idx` cắt tuần tự theo đúng số lượng token của từng câu ban đầu để ghép lại chuỗi nhãn BIO chuẩn xác.
+
+Bài toán gán nhãn chuỗi (Sequence Labeling) được tiếp cận bằng cách "phẳng hóa" (flatten) toàn bộ dữ liệu, biến nó thành bài toán phân loại đa lớp ở mức độ từng từ (Token-level Classification). Ý tưởng được triển khai qua các bước sau:
+
+* **Bước 1: Trích xuất đặc trưng (Kỹ thuật Cửa sổ trượt - Sliding Window)**
+  Hàm `tok_feats` được thiết kế để trượt một "cửa sổ" qua từng token trong câu nhằm thu thập ngữ cảnh cục bộ làm đặc trưng học. Với mỗi token đang xét, hệ thống trích xuất:
+  * *Ngữ cảnh không gian:* Lấy 2 token phía trước (`w-1`, `w-2`) và 2 token phía sau (`w+1`, `w+2`).
+  * *Ngữ cảnh chuỗi (Bigrams):* Ghép cặp token liền kề (`w-1|w`, `w|w+1`) để mô hình hiểu được sự liên kết từ vựng.
+  * *Đặc trưng hình thái:* Kiểm tra xem token hiện tại có phải là số hay không (`digit`).
+  Thông qua hai vòng lặp `for`, toàn bộ các câu trong tập train/test được tháo rời thành một mảng 1 chiều khổng lồ chứa đặc trưng của từng token độc lập.
+
+* **Bước 2: Vector hóa (DictVectorizer)**
+  Vì đặc trưng của mỗi token đang ở dạng từ điển (Dictionary), hệ thống sử dụng `DictVectorizer` để ánh xạ trực tiếp các từ điển này thành ma trận số thưa (sparse matrix). Kỹ thuật này giúp tiết kiệm tối đa tài nguyên RAM khi phải xử lý hàng trăm ngàn token.
+
+* **Bước 3: Huấn luyện mô hình (Linear SVM)**
+  Hệ thống sử dụng `SGDClassifier` với cấu hình hàm mất mát `loss="hinge"` (bản chất toán học chính là một mô hình Linear SVM). Việc huấn luyện SVM thông qua thuật toán Tối ưu dốc ngẫu nhiên (Stochastic Gradient Descent) kết hợp tham số điều chuẩn `alpha=2e-6` giúp mô hình học cực kỳ nhanh và hội tụ chỉ sau vài chục vòng lặp (`max_iter=30`).
+
+* **Bước 4: Khôi phục chuỗi (Reconstruction) và Ghép kết quả**
+  Sau khi dự đoán, kết quả trả về (`preds_slot`) là một mảng 1 chiều chứa nhãn của toàn bộ các token liên tiếp nhau. Để khôi phục định dạng nộp bài, hệ thống duyệt lại từng câu trong tập test, đếm chính xác số lượng từ gốc (`length`), và dùng một con trỏ `idx` trượt trên mảng dự đoán để cắt ra đúng số lượng nhãn. Các nhãn này được ghép lại bằng dấu cách và lưu vào DataFrame cùng với dự đoán của Intent.
