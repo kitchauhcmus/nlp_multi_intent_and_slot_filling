@@ -144,7 +144,7 @@ public/
 
 Hệ thống được thiết kế theo hướng tiếp cận độc lập, giải quyết song song hai bài toán Intent Classification và Slot Filling.
 
-### 1. Mô hình Baseline (TF-IDF & Linear Model)
+### 1. Mô hình Baseline (TF-IDF & SVM)
 
 **a. Phân loại Ý định (Intent Classification)**
 Bài toán được tiếp cận dưới dạng **Multi-label Classification** để xử lý các câu lệnh chứa từ 2 ý định trở lên.
