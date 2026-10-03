@@ -124,6 +124,9 @@ Ví dụ với câu `gọi tôi dậy lúc chín giờ sáng ngày thứ sáu` ,
 | `O O O O B-time I-time O O B-date I-date` | 1 ( `date` ) | 1 ( `time` sai ranh giới) | 1 |
 | `O O O O B-time I-time I-time O B-time I-time` | 1 | 1 | 1 |
 
+### Bảng xếp hạng và điểm cuối cùng
+Vì đây là cuộc thi thử để làm quen, đề không có private test. Bảng xếp hạng chấm mỗi bài nộp trên toàn bộ tập test (2.727 câu), và điểm cuối cùng của bài là điểm cao nhất của đội trong các lần nộp được tính. Điểm tối đa là 1,0.
+
 ## Cấu trúc thư mục dữ liệu
 
 ```text
