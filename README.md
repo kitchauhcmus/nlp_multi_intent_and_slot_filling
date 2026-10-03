@@ -91,4 +91,12 @@ Tệp CSV mã hoá UTF-8, có dòng tiêu đề, gồm đúng 2.727 dòng dữ l
 id,intent,slots
 u90001,alarm_set,0 0 0 0 B-time I-time I-time 0 B-date I-date
 u90002,alarm_set#weather_query,0 0 0 0 B-time I-time I-time I-time I-time I-time 0 0 0 B-date I-date 0 0
+```
+Hai dòng trên dùng lại hai câu ví dụ ở tab Đề bài với `id` minh hoạ; bài nộp thật dùng `id` của `test.csv`. Số nhãn ở cột `slots` phải bằng số token của câu có cùng `id` (10 và 17 token ở hai dòng trên).
 
+Để bài nộp hợp lệ:
+
+* Bài nộp phải có đủ mọi `id` của `test.csv`. Dòng nào thiếu thì nhận 0 điểm ở cả hai phần.
+* Cột `intent` có ít nhất một nhãn; nhiều nhãn thì nối bằng `#`. Nhãn lặp lại chỉ tính một lần. Nhãn không có trong `intents.txt` được tính là dự đoán sai.
+* Cột `slots` có số nhãn bằng số token của `text`. Nếu số nhãn lệch, câu đó được coi là **không dự đoán thực thể nào**: câu đó mất toàn bộ điểm slot, các câu khác vẫn được chấm bình thường.
+* Bài nộp sai định dạng không làm hỏng việc chấm; ô lỗi chỉ nhận 0 điểm.
