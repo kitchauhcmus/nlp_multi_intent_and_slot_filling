@@ -200,7 +200,7 @@ Bài toán gán nhãn chuỗi (Sequence Labeling) được giải quyết bằng
 
 ### 2. Huấn luyện XLM-R
 
-Khối mã nguồn này triển khai kiến trúc **Học đa nhiệm (Multi-task Learning)**. Thay vì dùng cửa sổ trượt như SVM, hệ thống sử dụng chung một "bộ não" (Encoder XLM-R) kết hợp với 2 "cái đầu" phân loại (Linear Heads) riêng biệt để dự đoán đồng thời Ý định (Intent) và Thực thể (Slot)[cite: 21].
+Hệ thống sử dụng chung cấu trúc Encoder XLM-R kết hợp với 2 heads riêng biệt để dự đoán đồng thời Ý định (Intent) và Thực thể (Slot).
 
 Giả sử chúng ta đưa 1 câu huấn luyện duy nhất vào mô hình:
 * **Câu lệnh:** `"gọi tôi dậy lúc chín giờ"`[cite: 21].
