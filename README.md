@@ -200,103 +200,32 @@ Bài toán gán nhãn chuỗi (Sequence Labeling) được giải quyết bằng
 
 ### 2. Mô hình Học sâu (Joint Model với XLM-RoBERTa)
 
-Khối mã nguồn này triển khai kiến trúc **Học đa nhiệm (Multi-task Learning)**. Thay vì huấn luyện hai mô hình rời rạc, hệ thống sử dụng sức mạnh hiểu ngữ cảnh toàn cục của `xlm-roberta-base` để đọc câu một lần và dự đoán đồng thời cả Intent lẫn Slot.
+Khối mã nguồn này triển khai kiến trúc **Học đa nhiệm (Multi-task Learning)**. Thay vì dùng cửa sổ trượt như SVM, hệ thống sử dụng chung một "bộ não" (Encoder XLM-R) kết hợp với 2 "cái đầu" phân loại (Linear Heads) riêng biệt để dự đoán đồng thời Ý định (Intent) và Thực thể (Slot)[cite: 21].
 
-Dưới đây là phần giải thích chi tiết ý tưởng và luồng xử lý dữ liệu của từng khối code:
+Giả sử chúng ta đưa 1 câu huấn luyện duy nhất vào mô hình:
+* **Câu lệnh:** `"gọi tôi dậy lúc chín giờ"`[cite: 21].
+* **Nhãn Intent:** `"alarm_set"`[cite: 21].
+* **Nhãn Slot (BIO):** `"O O O O B-time I-time"`[cite: 21].
 
-#### Khối 1: Mã hóa Từ điển Nhãn (Label Encoding)
+Quá trình vận hành được chia thành các bước cốt lõi sau:
 
-```python
-# Lấy từ điển nhãn Intent
-mlb = MultiLabelBinarizer()
-train_intents = mlb.fit_transform([str(r).split("#") for r in train_df["intent"]])
+#### Bước 1: Tiền xử lý & Căn chỉnh Subword (Token Alignment)
+* Bộ Tokenizer sẽ băm nhỏ 14.000 câu đầu vào và đệm (padding) để tất cả các câu đều vuông vức ở cùng một chiều dài $k$ (trong code là `max_length=128`)[cite: 20].
+* Quá trình băm từ có thể tạo ra các subword thừa. Lớp `NLPDataset` sẽ dùng `word_ids` để nhận diện gốc từ. Các token đệm (`<pad>`) hoặc mảnh subword bị cắt dư sẽ bị gán nhãn `-100` để báo cho hàm Loss bỏ qua hoàn toàn việc chấm điểm[cite: 20].
 
-# Lấy từ điển nhãn Slot
-all_slots = sorted(list(set([s for sublist in train_df["slots"].str.split() for s in sublist])))
-slot2id = {s: i for i, s in enumerate(all_slots)}
-id2slot = {i: s for s, i in slot2id.items()}
-```
+#### Bước 2: Quá trình lắp ráp mô hình (Hàm `__init__`)
+Đây là bước khởi tạo các khối nơ-ron:
+* `self.enc`: Tải "bộ não" lõi XLM-R (Pre-trained) từ thư viện Transformers[cite: 21].
+* `h`: Trích xuất số chiều của vector ngữ nghĩa, đối với mô hình Base kích thước này là 768 chiều[cite: 21].
+* `self.int_head` & `self.slot_head`: Khởi tạo 2 mạng tuyến tính (Linear Layer) hoàn toàn mới[cite: 21]. Đầu Intent sẽ nén ma trận 768 chiều về đúng bằng số lượng nhãn ý định (60 chiều)[cite: 20, 21]. Đầu Slot sẽ nén ma trận 768 chiều về đúng bằng số lượng nhãn BIO (54 chiều)[cite: 20, 21].
 
-* **Ý nghĩa & Ví dụ:**
-  * Máy học không hiểu chữ viết (`"play_music"`, `"B-time"`), nó chỉ hiểu số học. Do đó, ta cần các bộ "thông ngôn".
-  * `mlb`: Dịch nhãn Intent thành ma trận nhị phân. Ví dụ: Nếu tập data có 3 intent `[alarm, music, weather]`, câu mang nhãn `"alarm#music"` sẽ được băm ra và chuyển thành vector `[1, 1, 0]`.
-  * `slot2id` & `id2slot`: Quét toàn bộ nhãn Slot và lập từ điển gán số. Ví dụ: `"B-time"` -> `0`, `"I-time"` -> `1`. Khi huấn luyện, mô hình học trên các con số này. Khi dự đoán xong, ta dùng `id2slot` để dịch ngược từ số về lại chữ.
+#### Bước 3: Quá trình phân luồng dữ liệu (Hàm `forward`)
+Mô hình `self.enc` đọc cả câu và vector hóa mỗi token thành một vector 768 chiều[cite: 20]. Khối văn bản biến thành một ma trận $H$ khổng lồ[cite: 21]:
+* **Nhánh Intent (`H[:, 0]`):** Rút trích duy nhất token đầu tiên của câu (vị trí số 0 / ký tự `<s>`)[cite: 20, 21]. Ký tự này đã nhìn lướt qua toàn bộ câu và đúc kết ý nghĩa tổng thể[cite: 21]. Nó được đưa qua `int_head`, tạo ra một bảng dự đoán kích thước $14000 \times 60$[cite: 20, 21].
+* **Nhánh Slot (`H`):** Toàn bộ ma trận chứa vector của từng chữ ("gọi", "tôi", "dậy"...) được truyền nguyên bản vào `slot_head` để gán nhãn cho từng vị trí một[cite: 21]. Kết quả sinh ra một khối ma trận kích thước $14000 \times k \times 54$[cite: 20].
 
-#### Khối 2: Tiền xử lý & Căn chỉnh Subword (Token Alignment)
-
-```python
-encoding = tokenizer(words, is_split_into_words=True, truncation=True, padding="max_length", max_length=128, return_tensors="pt")
-# ...
-for word_idx in word_ids:
-    if word_idx is None or word_idx == prev_word_idx:
-        slot_ids.append(-100) # Ignored tokens
-    else:
-        slot_ids.append(slot2id[self.slots[idx][word_idx]])
-```
-
-* **Ý nghĩa & Ví dụ:**
-  * Khi đưa vào XLM-R, một từ có thể bị băm thành nhiều mảnh (subwords), làm xô lệch số lượng nhãn. Lớp `NLPDataset` sinh ra để khắc phục triệt để lỗi này.
-  * **Ví dụ:** Từ `"Nguyễễn"` bị tokenizer cắt thành 2 mảnh: `["Nguy", "ễễn"]`. Nếu nhãn gốc là `B-person`, ta không thể gán nhãn này cho cả 2 mảnh (vì sẽ bị tính thành 2 thực thể).
-  * Hàm `word_ids` nhận diện được chung gốc. Vòng lặp `for` sẽ gán nhãn `B-person` cho mảnh đầu (`"Nguy"`). Khi xét đến mảnh sau (`"ễễn"`), nó phát hiện trùng gốc (`word_idx == prev_word_idx`) nên lập tức gán nhãn `-100`.
-  * `-100` là cờ hiệu mặc định của PyTorch, báo cho hàm Loss hãy **bỏ qua hoàn toàn** việc chấm điểm tại vị trí này.
-
-#### Khối 3: Kiến trúc Mạng Đa nhiệm (Joint Model)
-
-```python
-class Joint(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.enc = AutoModel.from_pretrained(MODEL_NAME)
-        h = self.enc.config.hidden_size
-        self.int_head = nn.Linear(h, n_int)
-        self.slot_head = nn.Linear(h, n_slot)
-
-    def forward(self, input_ids, attention_mask):
-        H = self.enc(input_ids=input_ids, attention_mask=attention_mask).last_hidden_state
-        return self.int_head(H[:, 0]), self.slot_head(H)
-```
-
-* **Ý nghĩa & Ví dụ:**
-  * Lõi `enc` (XLM-R) đọc 128 token của câu, nhả ra khối ma trận đặc trưng $H$ có chiều sâu 768 chiều.
-  * `H[:, 0]`: Rút trích duy nhất token đầu tiên của câu (token `<s>`), vì theo cơ chế của RoBERTa, token này chứa sự đúc kết ngữ cảnh toàn câu. Đưa nó qua `int_head` hạ xuống 60 chiều để dự đoán 60 **Intent**.
-  * `H`: Đưa nguyên vẹn ma trận chuỗi qua `slot_head` để hạ từ 768 chiều xuống 54 chiều, phục vụ dự đoán 54 **Slot** cho từng token.
-
-#### Khối 4: Phân hóa Tốc độ học (Differential Learning Rate)
-
-```python
-heads = list(model.int_head.parameters()) + list(model.slot_head.parameters())
-opt = torch.optim.AdamW([
-    {"params": model.enc.parameters(), "lr": 3e-5},
-    {"params": heads, "lr": 1e-3}
-], weight_decay=0.01)
-```
-
-* **Ý nghĩa & Ví dụ:**
-  * Kỹ thuật tinh chỉnh (Fine-tuning) nâng cao nhằm bảo vệ trọng số gốc của mô hình.
-  * Lõi `model.enc` đã được huấn luyện sẵn (pre-train) với lượng dữ liệu khổng lồ, nên ta chỉ cho nó học với tốc độ cực nhỏ (`lr = 3e-5`) để tinh chỉnh từ từ.
-  * Hai mạng tuyến tính (`heads`) là ta vừa mới gắn thêm, hoàn toàn trống rỗng. Ta ép chúng học ở tốc độ lớn hơn hàng chục lần (`lr = 1e-3`) để nhanh chóng bắt kịp với độ thông minh của lõi XLM-R.
-
-#### Khối 5: Tính tổng Sai số (Loss)
-
-```python
-loss = bce(li, y_int) + ce(ls.view(-1, n_slot), y_slot.view(-1))
-```
-
-* **Ý nghĩa & Ví dụ:**
-  * `bce`: Hàm Binary Cross Entropy. Dùng để đối chiếu xác suất Intent sinh ra với vector nhị phân ban đầu (giải quyết triệt để bài toán 1 câu có nhiều Intent).
-  * `ce`: Hàm Cross Entropy đa lớp. Tính sai số cho từng token trong chuỗi Slot. Mọi token đệm (`<pad>`) hoặc subword dư thừa đều được bỏ qua nhờ cơ chế `ignore_index=-100` thiết lập từ trước.
-  * Tổng sai số = Sai số Intent + Sai số Slot (tỉ lệ 1:1). Thuật toán AdamW sẽ dùng tổng này để đi ngược lại (backpropagation) cập nhật trọng số cho toàn hệ thống.
-
-#### Khối 6: Dự đoán & Khôi phục chuỗi (Inference)
-
-```python
-for word_idx, pred_idx in zip(word_ids, pred_sequence):
-    if word_idx is not None and word_idx != prev_word_idx:
-        final_slots.append(id2slot[pred_idx])
-    prev_word_idx = word_idx
-```
-
-* **Ý nghĩa & Ví dụ:**
-  * Khi suy luận, mô hình luôn trả về một mảng chứa đủ 128 nhãn (bao gồm cả các nhãn rác của token đệm và mảnh subword).
-  * Vòng lặp `zip` chạy song song nhãn dự đoán và mảng vị trí gốc `word_ids` đã lưu. Nó thẳng tay vứt bỏ các vị trí `None` (đầu/cuối câu, pad) và các vị trí trùng lặp số (mảnh subword thừa).
-  * **Ví dụ:** Nếu câu test gốc chỉ có 5 từ vựng, vòng lặp này sẽ sàng lọc và trích xuất ra **đúng 5 nhãn**, dùng từ điển `id2slot` để dịch từ số sang chữ, đảm bảo khi nộp bài số lượng nhãn khớp 100% với số lượng từ vựng ban đầu.
+#### Bước 4: Tính sai số (Loss) và Tốc độ học (Learning Rate)
+* **Tính Loss:** Hệ thống đem ma trận Intent đối chiếu với đáp án thực tế bằng hàm BCE Loss, và đem khối Slot đối chiếu bằng hàm CE Loss (đã bỏ qua các token đệm padding)[cite: 20]. Theo đúng logic mã nguồn đang chạy, hệ thống sẽ cộng gộp trực tiếp hai sai số này (tỉ lệ 1:1) để tạo thành một tổng sai số duy nhất (Lưu ý: Code thực tế không sử dụng trọng số `w_int` để tránh làm lệch phân phối).
+* **Phân hóa Tốc độ học (AdamW):** Hệ thống dựa vào tổng sai số này để lan truyền ngược cập nhật trọng số, nhưng chia làm 2 tốc độ[cite: 20]:
+  * `model.enc` (Lõi XLM-R): Đã rất thông minh nhờ học hàng tỷ văn bản, nên chỉ cho học cực chậm (`lr = 3e-5`) để tinh chỉnh nhẹ nhàng, bảo toàn kiến thức đã có[cite: 20, 21].
+  * `heads` (Hai mạng Linear): Mới tinh, hoàn toàn "trắng não", nên bị ép học cấp tốc (`lr = 1e-3`) để nhanh chóng bắt nhịp với lõi Encoder[cite: 20, 21].
