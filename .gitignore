@@ -1,0 +1,9 @@
+# Dữ liệu và Trọng số mô hình
+*.csv
+*.pt
+*.bin
+*.pth
+
+# Caches của Jupyter và Python
+.ipynb_checkpoints/
+__pycache__/
