@@ -225,7 +225,7 @@ Mô hình `self.enc` đọc cả câu và vector hóa mỗi token thành một v
 * **Nhánh Slot (`H`):** Toàn bộ ma trận chứa vector của từng chữ ("gọi", "tôi", "dậy"...) được truyền nguyên bản vào `slot_head` để gán nhãn cho từng vị trí một[cite: 21]. Kết quả sinh ra một khối ma trận kích thước $14000 \times k \times 54$[cite: 20].
 
 #### Bước 4: Tính sai số (Loss) và Tốc độ học (Learning Rate)
-* **Tính Loss:** Hệ thống đem ma trận Intent đối chiếu với đáp án thực tế bằng hàm BCE Loss, và đem khối Slot đối chiếu bằng hàm CE Loss (đã bỏ qua các token đệm padding)[cite: 20]. Theo đúng logic mã nguồn đang chạy, hệ thống sẽ cộng gộp trực tiếp hai sai số này (tỉ lệ 1:1) để tạo thành một tổng sai số duy nhất (Lưu ý: Code thực tế không sử dụng trọng số `w_int` để tránh làm lệch phân phối).
+* **Tính Loss:** Hệ thống đem ma trận Intent đối chiếu với đáp án thực tế bằng hàm BCE Loss, và đem khối Slot đối chiếu bằng hàm CE Loss (đã bỏ qua các token đệm padding)[cite: 20]. Theo đúng logic mã nguồn đang chạy, hệ thống sẽ cộng gộp trực tiếp hai sai số này (tỉ lệ 1:1) để tạo thành một tổng sai số duy nhất 
 * **Phân hóa Tốc độ học (AdamW):** Hệ thống dựa vào tổng sai số này để lan truyền ngược cập nhật trọng số, nhưng chia làm 2 tốc độ[cite: 20]:
   * `model.enc` (Lõi XLM-R): Đã rất thông minh nhờ học hàng tỷ văn bản, nên chỉ cho học cực chậm (`lr = 3e-5`) để tinh chỉnh nhẹ nhàng, bảo toàn kiến thức đã có[cite: 20, 21].
   * `heads` (Hai mạng Linear): Mới tinh, hoàn toàn "trắng não", nên bị ép học cấp tốc (`lr = 1e-3`) để nhanh chóng bắt nhịp với lõi Encoder[cite: 20, 21].
